@@ -1,0 +1,93 @@
+##-- // ТЕМПЛЕЙТ --##
+<tpl name=cardList>
+
+<script type="text/javascript" src="/templates/js/autoNumeric/autoNumeric.min.js"></script>
+
+<script type="text/javascript">
+ $(document).ready(function() {
+  $("#checkbox").on("click",function(event){
+    event.preventDefault();
+    var commentadmin = prompt('Коментарий к рассмотренному обращению:','');
+  if(commentadmin != null){
+    var id_value = $(this).val();
+    var value_true = 1; 
+    $.ajax({
+            url: '/ajax/info_errors_users_adminAjax.php',
+            method: 'post',
+            data:{id_value:id_value, value_true:value_true, commentadmin:commentadmin},
+            }).done(function (data){
+                alert(data);
+                window.location.reload();
+            });
+   }
+});
+});
+</script>
+
+<script type="text/javascript" src="/templates/js/inputmask/jquery.inputmask.bundle.min.js"></script>
+
+
+<style type="text/css">
+input {
+  text-align:center;
+}
+
+.infoMessage {
+  text-decoration:underline;
+  text-transform: uppercase;
+  font-weight:bold;
+  color:#f00;
+}
+</style>
+
+<? 
+if(isset($_SESSION["INFO_MESSAGE"])) {
+  echo '<div class="infoMessage">'.$_SESSION["INFO_MESSAGE"].'</div><br />';
+  unset($_SESSION["INFO_MESSAGE"]);
+}
+?>
+
+<form action="<?=$action; ?>" method="POST">
+  <table id="myTable" class="table_list" style="width:100%;">
+    <thead>
+    <tr>
+      <th>№</th>
+      <th>Текст с ошибкой</th>
+      <th>Адрес страницы</th>
+      <th>Комментарий пользователя</th>
+      <th>Время получения сообщения</th>
+      <th>IP пользователя</th>
+      <th>Обрабока обращения</th>
+      <th>Кем рассмотренно обращение</th>
+      <th>Комментарий администратора</th>
+      <th>Дата исполнения</th>
+    </tr>
+    </thead>    
+    <tbody>
+      <? foreach ($pageMessages as $value): ?>
+  		<tr>
+        <th style="text-align: center;"><?=$messageOffsetNew.".";?></th>
+        <td style="text-align: left;">{$value["users_text"]}</td>
+        <td style="text-align: center;"><a href="{$value['url_err']}" target="_blang">{$value['url_err']}</a></td>
+        <td style="text-align: center;">{$value["comment"]}</td>
+        <td style="text-align: center;">{$value["date_time"]}</td>
+        <td style="text-align: center;">{$value["ip_user"]}</td>
+        <td style="text-align: center;">
+        <?if($value["edit"] == 0):?>
+          <input type="image" src="/admin/i/ico/apply.png" id="checkbox" value="{$value['id']}" style="border: 0px;">
+        <?else:?>
+          <img src="/admin/i/ico/apply_f2.png">
+        <?endif;?>
+        </td>
+        <td style="text-align: center;">{$value["admin_edit_name"]}</td>
+        <td style="text-align: center;">{$value["admin_coment"]}</td>
+        <td style="text-align: center;">{$value["time_admin"]}</td>
+  		</tr>
+      <? $messageOffsetNew++;?>
+      <? endforeach; ?>
+  	</tbody>
+  </table>
+</form>
+
+</tpl cardList>
+<!-- картинка apply_f2.png для отредаченного файлика -->0
