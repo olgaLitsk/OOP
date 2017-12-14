@@ -1,0 +1,689 @@
+
+<tpl name=list>
+
+<%INCTPL name="calendar" src="calendar.html"%>
+<%PRNTPL name="calendar"%>
+
+<STYLE>
+BODY {
+/*background: #DDD;*/
+}
+.feedback_table {
+	padding: 0;
+	margin: 0;
+	font-size:12px;
+	border-top:2px solid #999999;
+	border-left:2px solid #999999;
+}
+.feedback_table th {
+	text-align:right;
+	white-space:nowrap;
+}
+.feedback_table TD {
+	border-right:2px solid #999999;
+	border-bottom:2px solid #999999;
+	border-collapse: collapse;
+	margin: 0px;
+	padding: 0px;
+}
+.feedback_table TD DIV DIV {
+	padding: 10px;
+}
+.feedback_table TD TABLE, .feedback_table TD TABLE TD, .feedback_table TD TABLE TH {
+	border: 0;
+}
+.feedback_table TEXTAREA {
+	width: 100%;
+	height: 100px;
+	font-family: Arial;
+	font-size: 12px;
+}
+#ajax-save-message {
+	position: fixed;
+	top: 50%;
+	left:50%;
+	width: 300px;
+	height: 100px;
+	margin-top: -50px;
+	margin-right: -150px;
+	line-height: 100px;
+	text-align:center;
+	font-size: 20px;
+	background: #FFF;
+	border: 3px solid #0DFF0D;
+	z-index: 9999;
+	display: none;/*overflow:hidden;*/
+	/*line-height: 10px;
+	font-size: 10px;*/
+	
+}
+.but {
+	display:block;
+	background:#CCCCCC;
+	border:#060606 1px solid;
+	padding:5px;
+	width:150px;
+	height:15px;
+	line-height:15px;
+	text-align:center;
+}
+.time{width:20px;}
+
+.notupdate TD{ background:#FFA0A0; }
+
+#filials_list P{ padding:0; margin:0.5em 0; }
+
+TEXTAREA{ font-size:12px;}
+</STYLE>
+<script type="text/javascript"> 
+
+ $(document).ready(function() {    
+	 //Загружаем список 
+	 //loadList();
+     
+	 //if close button is clicked  
+     $('.modal_window .close').click(function (e) {  
+         //Cancel the link behavior  
+         e.preventDefault();  
+         $('#mask, .modal_window').hide();  
+     });       
+       
+     //if mask is clicked  
+     $('#mask').click(function () {  
+         $(this).hide();  
+         $('.modal_window').hide();  
+     });           
+ }); 
+
+function loadList(){ 
+	url="<?=$action?>&ajax=list";
+	$('.words_list').load( url );
+}
+
+function loadVklad(id){ 
+	//alert (id);
+	url="<?=$action?>&ajax=loadVklad&id="+id;
+	$('#vklad_'+id).load( url );
+}
+
+
+function modalWindow(url,winW,winH){
+
+    //Get the window height and width 
+	if(!winH) winH = $(window).height()-100;  
+    if(!winW) winW = $(window).width()-200;  
+
+	$('.modal_window').css('width', winW);
+
+    //Get the screen height and width  
+    var maskHeight = $(document).height();  
+    var maskWidth = $(window).width();  
+       
+    //Set height and width to mask to fill up the whole screen  
+    $('#mask').css({'width':maskWidth,'height':maskHeight});  
+           
+    //transition effect       
+    $('#mask').fadeTo(300,0.5);    
+       
+                 
+	//Set the popup window to center  
+  //  $('.modal_window').css('top',  100);  
+   // $('.modal_window').css('left', winW-$('.modal_window').width()/2);  
+       
+	//POSITION
+	$('.modal_window').css('top', $(window).scrollTop()+50);
+	$('.modal_window').css('left', Math.max((maskWidth-$('.modal_window').width())/2,0));
+
+	
+
+	   
+    //transition effect  
+    $('.modal_window').fadeIn(300);   
+	$('#modal_content').html( '<img src="/admin/templates/i/loading.gif" align="center" /> ' );
+	$('#modal_content').load( url );
+}
+
+$(window).bind('resize', function(e) {
+var maskHeight = $(document).height();
+var maskWidth = $(window).width();
+//Set height and width to mask to fill up the whole screen
+$('#modalMask').css({'width':maskWidth,'height':maskHeight});
+}); 
+
+
+function cancel(qid){
+	//loadList();
+	$('#mask, .modal_window').hide(); 
+}
+
+function save(formid, updateid){
+	//formid = '#questionform_' + qid;
+	if(!confirm('Сохранить изменения?')){ return false; }
+
+	if(0){
+		alert( $(formid).attr("action") );
+	}
+	$.ajax({
+	   	type: "POST",
+   		url: $(formid).attr("action"),
+   		data: $(formid).serializeArray(),
+   		async: false,
+   		success: function(responseText, responseCode) {
+			//alert(responseText);
+			cancel(formid);
+			loadVklad(updateid);
+			//$('#ajax-save-message').hide().html(responseText).fadeIn(100);
+			//setTimeout(function(){ 	$('#ajax-save-message').fadeOut(200);	}, 500);
+			//setTimeout(function(){ 	cancelQuestion(qid);	}, 500);
+   		}
+ 	});
+	return false;
+};
+
+function del_vklad(id){
+	if(!confirm('Точно удалить?')){ return false; }
+	url="<?=$action?>&ajax=delete_vklad&id="+id;
+	//formid = '#questionform_' + qid;
+//	$("#vklad_12").slideUp();
+	$.ajax({
+	   	type: "POST",
+   		url: url,
+   		async: false,
+   		success: function(responseText, responseCode) {
+			$("#vklad_" + responseText+ "_edit").hide();
+			$("#vklad_" + responseText).hide();
+			//alert(responseText);
+   		}
+ 	});
+	
+	return false;
+};
+
+function savePictures(formid, updateid){
+  $("#goSavePictures").attr('disabled',true);
+  var fd = new FormData();
+  fd.append( 'brend_book_'+updateid, $('#brend_book_'+updateid)[0].files[0]);
+  fd.append('picture_'+updateid, $('#picture_'+updateid)[0].files[0]);
+  url = "<?=$action?>&ajax=update_pictures&id="+updateid;
+  $.ajax({
+          url: url,
+          data: fd,
+          processData: false,
+          contentType: false,
+          type: 'POST',
+          success: function(data){
+          $("#goSavePictures").attr('disabled',false);
+          $(formid)[0].reset();
+          alert(data);
+          }
+       });
+
+//console.log(fd);
+
+
+  //formid = '#questionform_' + qid;
+};
+
+</script>
+
+<br />
+<table ><tr>
+<td><a href="#" onClick="$('#addVipusk').show();$(this).hide();" class="A_button" >Добавить новый вклад</a>
+  <div id="addVipusk" style="display:none;">
+<form action="{$action}&mode=add_vklad" id="add_vklad" name="add_vklad" method="post">
+<table><tr><td>
+Название вклада: <br />
+<div style = "position:relative;" > 
+<table cellpadding = 0 cellspacing = 0 style="border:1px solid #666666;"> 
+<tr> 
+<td  style = "vertical-align:top"><input name="VKLAD[vklad_name]" value="" id = "veve" style = "margin:0;padding:0; border:0; height:18px;" ></td><td style = "vertical-align:middle; border-left:1px solid #666666"><A onclick = "ve = getElementById('ve'); ve.style.display=(ve.style.display==''?'none':'');it=2;">&nbsp;&nbsp;&raquo;&nbsp;&nbsp;</A>
+</td> 
+</tr> 
+</table> 
+</div> 
+<div style = "margin:0;  position:absolute;display:none;width:170;color:black;font-family:verdana;font-size:10;border:1 black solid;background-color:white"  id = "ve" > 
+<select size="10" id="vve" onclick = "getElementById('veve').value=this.value; getElementById('ve').style.display='none'">
+<? foreach ($VKLADY_NAMES as $name){ ?>
+<option value="{$name}">{$name}</option>
+<? } ?>
+</select>
+</div>
+<script type="text/javascript">
+var it = 0; 
+document.onclick=zz; 
+function zz() 
+{ 
+it--; 
+if(it!=1) 
+{ 
+ve.style.display='none'; 
+} 
+}
+</script>
+</td><td>
+Валюта вклада:<br />
+	<table cellpadding = 0 cellspacing = 0 style="border:1px solid #666666;"> <tr><td> 
+        <select name="VKLAD[vklad_val]]" style="border:0; margin:0; padding:0; height:18px;">
+		<option value=""></option>
+		<? foreach ($VAL as $val){ ?>
+		<option value="{$val[val_key]}">{$val[val_name]}</option>
+		<? } ?>
+	</select>
+	</td></tr></table>
+</td><td>
+<input type="submit" value="Добавить" class="A_button"  />
+</td></tr></table>
+</form>
+</div>
+</td>
+</tr>
+</table>
+
+  <table width="400" border="1" cellspacing="0" cellpadding="0" class="table_list" style="display:none;">
+    <tr>
+      <th><b>Область</b></th>
+      <th><b>Тип</b></th>
+      <th><b>Номер</b></th>
+      <th><b>Город</b></th>
+      <th><b>Улица</b></th>
+      <th><b>Обновлен</b></th>
+      <th><b>Услуга</b></th>
+      <th>Сортировка</th>
+      <th>&nbsp;</th>
+    </tr>
+    <tr>
+      <td><select name="filter[oblast]">
+          <option value="" >Все</option>
+          <?
+        	foreach($vklad as $t ){
+        ?>
+          <option value="<?=$t['id']; ?>" <? if($filter['oblast'] == $t['id']) echo 'selected'; ?> >
+          <?=$t['name']; ?>
+          </option>
+          <?
+            }
+        ?>
+          >
+        </select></td>
+      <td><select name="filter[type]" size="1" id="type">
+          <option value="" >Все</option>
+          <?
+        	foreach($FILIAL_TYPES as $id=>$name ){
+        ?>
+          <option value="<?=$id; ?>" <? if($filter['type'] == $id) echo 'selected'; ?> >
+          <?=$name; ?>
+          </option>
+          <?
+            }
+        ?>
+        </select></td>
+      <td nowrap><input name="filter[num]" value="<?=$filter{'num'}?>" type="text" size="5" maxlength="3" style="width:22px;">
+        <input name="filter[subnum]" value="<?=$filter{'subnum'}?>" type="text" size="5" maxlength="3" style="width:22px;">      </td>
+      <td><input name="filter[city]" value="<?=$filter{'city'}?>" type="text" size="20" maxlength="20" style="width:50px;"></td>
+      <td><input name="filter[street]" value="<?=$filter{'street'}?>" type="text" size="20" maxlength="20" style="width:50px;"></td>
+      <td><select name="filter[updated]" size="1" id="updated">
+          <option value="0">Все</option>
+          <option value="-1" <? if($filter{'updated'}==-1)echo 'selected'; ?>>Обновленные</option>
+          <? for($i=1; $i<8; $i++): ?>
+          <option value="<?=$i?>" <? if($filter{'updated'}==$i)echo 'selected'; ?>>Не обновленные
+          <?=$i?>
+          нед.</option>
+          <? endfor; ?>
+        </select></td>
+      <td><select name="filter[usluga]">
+        <option></option>
+        <? 	foreach($USL as $u=>$v) { ?>
+        <option value="<?=$u; ?>"<? if ($filter{usluga}==$u) { echo " selected";}?>>
+        <?=$v{'usl_name'}; ?>
+        </option>
+        <? } ?>
+      </select></td>
+      <td><select name="sortby">
+        <option value="number">Номеру</option>
+        <option value="update">Актуальности</option>
+        <option value="change">Последние изменения</option>
+      </select></td>
+      <td><input type="submit" name="Submit" value="Искать"></td>
+    </tr>
+  </table>
+  <table border="0">
+    <?
+	/*$counter=0;
+	foreach($USL as $u=>$v){
+	  $start_line='<td width="300">'; $end_line='</td>';
+	  if ($counter==0) { $start_line='<tr><td width="300">'; $end_line='</td>'; }
+	  echo  $start_line.'<input type=checkbox name='.$u.' value=1 '.(($PARAM{ $u})?'checked':'').'>'.$v{'usl_name'}.$end_line;
+	  $counter++;
+	  if ($counter==5) { $counter=0; echo '</tr>'; }
+	}
+*/
+?>
+  </table>
+
+Фильтр:
+<form method="post">
+<table><tr>
+<td>Название вклада</td><td>Валюта вклада</td><td></td>
+</tr>
+  <tr>
+    <td>
+    <select name="filter[vklad_name]">
+		<option value=""></option>
+		<? foreach ($VKLADY_NAMES as $name){ ?>
+		<option value="{$name}">{$name}</option>
+		<? } ?>
+	</select>
+</td>
+    <td>
+    <select name="filter[vklad_val]">
+		<option value=""></option>
+		<? foreach ($VAL as $val){ ?>
+		<option value="{$val[val_key]}">{$val[val_name]}</option>
+		<? } ?>
+	</select></td>
+    <td><input type="submit" name="button" id="button" value="Фильтр" class="A_button"/></td>
+  </tr>
+</table>
+</form>
+<br />
+<br>
+<table width="100%"  border="1" cellpadding="3" cellspacing="0" class="table_list" id="filials_list">
+  <tr id="filials_list_header">
+    <th width="300" align="center"><b>Наименование</b></th>
+    <th align="center">Информация о вкладе</th>
+    <th align="center">Информация о выплате процентов</th>
+    <th align="center">Информация о процентах</th>
+  <th width="100" align="center">&nbsp;  </tr>
+  <script type="text/javascript">
+	function filedit(fil) {
+		savePosition();
+		 var rez = window.open('/mod/filials/filial_edit.php?fil='+fil, 'filial_edit', 
+        'height=700, width=650, dialog="modal", modal="modal",');  
+	}
+
+	</script>
+  <?
+$bg_class = 'line';
+foreach($VKLADY as $vklad){
+$bg_class = $bg_class!='' ? '' : 'line' ;
+?>
+ <tr class = "<?=$bg_class;?>"  id="vklad_<?=$vklad{'vklad_id'}; ?>">
+  <? 
+  	$D = array(
+    	'vklad' => $vklad,
+        'bg_class' => $bg_class,
+        'userGrantsLevel' => $userGrantsLevel,
+        'KAPITAL' => $KAPITAL,
+    );
+  TPL::PrnTpl('line',$D); 
+  ?>
+   
+
+    <tpl name=line>
+      <td valign="top" style="border-bottom:0;" >
+        <span style="font-size:16px; font-weight:bold;">Вклад "<? echo $vklad['vklad_name'];?>"</span> <br />
+<p><b>Валюта вклада: </b><?=F::prn_number($vklad['vklad_stoimost']);?> <?=$vklad['vklad_val']; ?> </p>
+<p><b>Срок вклада: </b><? 
+if($vklad['vklad_srok']!=0) echo $vklad['vklad_srok'].' '.$vklad['vklad_srok_type'];
+if($vklad['vklad_srok_do']!='') echo ' до '.$vklad['vklad_srok_do'];
+?> </p>
+<p><strong>Проценты:</strong>
+  <?=$vklad['vklad_procent'].'% '; echo $vklad['vklad_procent_plus_sr'] ? ' + СР ' : 'фикс'  ?>
+</p>
+<p><strong>Минимальная сумма:</strong>
+  <?=$vklad['vklad_minimal']; ?>
+</p>
+<p><strong>Количество дней в году:</strong>
+  <? if ($vklad['vklad_real_year_days'] == 0) echo 360; else echo 365; ?>
+</p>
+<p><strong>Капитализация:</strong> <? echo $KAPITAL[$vklad['vklad_kapital']]['kap_name']; ?>
+</p>
+<? if($vklad['vklad_page_id'] != 0): ?>
+<p><strong>Страница на сайте:</strong><br /><?
+$pageAdr = 'https://belarusbank.by/ru_'.$vklad['vklad_page_id'].'.htm';
+echo '<a target="_blank" href="'.$pageAdr.'">'.$pageAdr.'</a>';
+?>
+</p>
+<? endif; ?>
+<p><strong>Премиальные проценты <br /><span style="font-size: 9px;">(выплачивается в день наступления срока 
+возврата вклада путем присоединения к остатку вклада)</span>: </strong>
+  <? echo $vklad['vklad_dop_dohod']; ?>
+</p>
+<p><strong>Состояние: </strong>
+  <?=(($vklad['visible'])?'Видимый':'Выключен'); ?>
+</p></td>
+      <td valign="top" style="border-bottom:0; "><? echo nl2br($vklad['vklad_info']);?>      
+      <td valign="top" style="border-bottom:0; "><? echo nl2br($vklad['vklad_info_dohod']);?>      
+      <td valign="top" style="border-bottom:0; ">
+      <? echo nl2br($vklad['vklad_info_procent']);?>
+      <td valign="top" style="border-bottom:0;"><p>
+        <?  if($userGrantsLevel > 2){ ?>
+          <a href="#edit" class="A_button" onclick="del_vklad('<?=$vklad{'vklad_id'};?>');return false;">Удалить вклад</a>
+          <? } ?>
+      </p>      </td>
+    </tpl line>
+  </tr>
+  <?
+  	$D =  array('action'=>$action, 'vklad'=>$vklad, 'bg_class'=>$bg_class);
+  	TPL::PrnTpl("filial_line_edit", $D ) ;
+  ?>
+  <tpl name=filial_line_edit>
+  <tr class = "<?=$bg_class;?>"  id="vklad_<?=$vklad['vklad_id']; ?>_edit">
+    <td align="center" valign="top" style="border-top:0;"><a href="#edit" class="A_button" onclick="modalWindow('{$action}&ajax=edit_vklad&id=<?=$vklad['vklad_id'];?>',800);return false;">Редактировать</a></td>
+    <td align="center" valign="top" style="border-top:0;">&nbsp;</td>
+    <td align="center" valign="top" style="border-top:0;">
+    <!--Вставка кода-->
+      <form action="{$action}&ajax=save_pictures" id="edit_pictures"  method="post" enctype="multipart/form-data">
+        <label><input name="brend_book_<?=$vklad['vklad_id'] ?>" id="brend_book_<?=$vklad['vklad_id'] ?>" type="file" accept="image/*">- Брендирование</label>
+        <label><input name="picture_<?=$vklad['vklad_id'] ?>" id="picture_<?=$vklad['vklad_id'] ?>" type="file" accept="image/*">- Картинка</label>
+        <input type="hidden" value="<?=$vklad['vklad_id'] ?>" name="id" />
+        <button id="goSavePictures" onclick="savePictures('#edit_pictures', '<?=$vklad['vklad_id']?>'); return false;" >Сохранить</button>
+      </form>
+    </td>
+    <td align="center" valign="top" style="border-top:0;">&nbsp;</td>
+    <td align="center" valign="top" style="border-top:0;">&nbsp;    </td>
+  </tr>
+  </tpl filial_line_edit>
+  <?
+
+}
+?>
+</table>
+
+<br />
+<br />
+Всего найдено: <strong>{$countFilials}</strong>
+{$pageList}<br><br />
+</tpl list>
+
+
+<br>*************************************************************************************************************<br>
+
+
+
+
+<tpl name=filial_edit_vklad>
+<script type="text/javascript">
+// для ежеквартальной капитализации показываем значения 
+$(document).ready(function() {
+
+  $("#vklad_kapital").change(function() {
+    if($("#vklad_kapital").val() == 7) {
+      $("#vklad_kapit_mesyac_kvartal").css("display","block");
+    }
+    else {
+      $("#vklad_kapit_mesyac_kvartal").css("display","none");
+    }
+  });
+
+$('#vklad_kapital').trigger('change');
+});
+
+</script>
+<p style="font-size:16px; font-weight:bold; padding:0.2em 0 0.2em 2em;">Редактируем</p>
+<form action="{$action}&ajax=save_vklad" id="edit_vklad" name="edit_vklad" method="post">
+<table width="100%" border="1" cellpadding="0" cellspacing="0" class="table_list">
+ <tr>
+   <th width="35%">Название вклада</th>
+   <td colspan="2"><input name="vklad[vklad_name]" type="text" value="<? echo htmlspecialchars($vklad['vklad_name'], NULL, '');?>" style="width:90%" /></td>
+ </tr>
+ <tr>
+   <th rowspan="2"><b>Валюта и срок вклада:</b></th>
+   <td rowspan="2"><select name="vklad[vklad_val]" >
+   	<? foreach($VAL as $val){
+    	$selected = $val['val_key']==$vklad['vklad_val'] ? 'selected' : '';
+    	echo '<option value="'.$val[val_key].'" '.$selected.'>'.$val[val_name].'</option>';
+    } ?>
+   </select>
+    </td>
+
+   <td> <strong>сроком на </strong>
+     <input name="vklad[vklad_srok]" type="text" value="<? echo $vklad['vklad_srok'];?>" />
+     <select name="vklad[vklad_srok_type]">
+       <? foreach($SROK_TYPE as $srok_key=>$srok_name){
+    	$selected = $srok_key==$vklad['vklad_srok_type'] ? 'selected' : '';
+    	echo '<option value="'.$srok_key.'" '.$selected.'>'.$srok_name.'</option>';
+	    } ?>
+     </select></td>
+ </tr>
+ <tr>
+   <td><strong>сроком до </strong>
+      <a href="#" style="cursor:pointer; text-decoration:none;" onClick="return showCalendar('vklad_srok_do', 'dd.mm.y');"><input name="vklad[vklad_srok_do]" id="vklad_srok_do" type="text" class="input_calendar" value="<? echo $vklad['vklad_srok_do'];?>" maxlength="10" />
+        <img src="/templates/js/calendar/i/calendar.gif" width="16" height="16"></td>
+ </tr>
+  <tr>
+   <th>ID страницы на сайте:</th>
+   <td colspan="2"><input name="vklad[vklad_page_id]" type="text" value="<? echo $vklad['vklad_page_id'];?>" /></td>
+ </tr>   
+ <tr>
+   <th>Процент:</th>
+   <td colspan="2"><input name="vklad[vklad_procent]" type="text" value="<? echo $vklad['vklad_procent'];?>" />
+     <select name="vklad[vklad_procent_plus_sr]">
+       <option value="0">Фикс</option>
+       <option value="1" <?if($vklad['vklad_procent_plus_sr']) echo 'selected';?> > + СР</option>
+     </select>
+     </td>
+ </tr>
+ <tr>
+   <th>Минимальная сумма:</th>
+   <td colspan="2"><input name="vklad[vklad_minimal]" type="text" value="<? echo $vklad['vklad_minimal'];?>" /></td>
+ </tr>
+ <tr>
+   <th><strong>Количество дней в году:</strong></th>
+   <td colspan="2"><select name="vklad[vklad_real_year_days]">
+     <? foreach(array('360'=>'0','365'=>1) as $k=>$v){
+    	$selected = $v==$vklad['vklad_real_year_days'] ? 'selected' : '';
+    	echo '<option value="'.$v.'" '.$selected.'>'.$k.'</option>';
+	    } ?>
+   </select></td>
+ </tr>
+ <tr>
+   <th><strong>Капитализация:</strong></th>
+   <td colspan="2"><select name="vklad[vklad_kapital]" id="vklad_kapital">
+     <? foreach($KAPITAL as $k=>$v){
+    	$selected = $k==$vklad['vklad_kapital'] ? 'selected' : '';
+    	echo '<option value="'.$v['kap_id'].'" '.$selected.'>'.$v['kap_name'].'</option>';
+	    } ?>
+   </select></td>
+ </tr>
+ <tr>
+   <th><strong>Премиальные проценты:</strong></th>
+   <td colspan="2"><input name="vklad[vklad_dop_dohod]" type="text" value="<? echo $vklad['vklad_dop_dohod'];?>" /></td>
+ </tr>
+ <tr>
+   <th><strong>Состояние:</strong></th>
+   <td colspan="2"><select name="vklad[visible]">
+     <option value="0">Выключен</option>
+     <option value="1" <?=(($vklad['visible'])?'selected':'');?> >Видимый</option>
+   </select></td>
+ </tr>
+ <tr>
+   <th>Условия:</th>
+   <td colspan="2">
+    <div style="display:none;" id="vklad_kapit_mesyac_kvartal">
+    Процент премиальной капитализации для нулевого периода &nbsp; 
+      <input name="vklad[vklad_dopKapit_procent]" type="text" value="<? echo $vklad['vklad_dopKapit_procent'];?>" style="width:70px;" />
+      <br /><br />
+    </div>
+
+   <? for($ind=0; $ind<=2; $ind++): 
+   $usloviya = $vklad['usloviya'][$ind];
+   ?>
+   <table border="1" cellspacing="0" cellpadding="0" class="table_list" id="usloviya[{$ind}]">
+     <tr>
+       <th colspan="4">Условие (<a href="#" onclick="return false;" style="font-weight:normal; color:#0099CC;">удалить условие</a>)
+        <input type="hidden" name="usloviya[{$ind}][show]" value="1" />
+       </th>
+    </tr>
+    <tr>
+      <th>сумма больше:</th>
+      <td>
+        <input name="usloviya[{$ind}][summ_from]" type="text" value="<? echo $usloviya['summ_from']; ?>" size="15" />
+      </td>
+       <th style="vertical-align:top; text-align:left;">проценты:
+        <br />
+        <br />
+        <span style="font-size: 9px;">проценты<br />для премиальной<br />капитализации<br />(если есть)</span>
+        </th>
+       <td nowrap="nowrap" style="vertical-align:top; text-align:left;">
+        <input name="usloviya[{$ind}][procent]" type="text" value="<? echo $usloviya['procent'];?>" size="10" />
+        <select name="usloviya[{$ind}][procent_plus_sr]">
+          <option value="0">Фикс</option><option value="1" <?if($usloviya['procent_plus_sr']) echo 'selected';?> > + СР</option>
+        </select>
+        <br />
+        <br />
+        <input name="usloviya[{$ind}][procent_kvartal]" type="text" value="<? echo $usloviya['procent_kvartal'];?>" size="10" />
+      </td>
+     </tr>
+     <tr>
+       <th>срок от:</th>
+       <td>
+         <input name="usloviya[{$ind}][srok_from]" type="text" value="<? echo $usloviya['srok_from']; ?>" size="5" />&nbsp;
+         <select name="usloviya[{$ind}][srok_type]">
+           <option value="d" <?if($usloviya['srok_type']=='d') echo 'selected';?> >дни</option>
+           <option value="m" <?if($usloviya['srok_type']=='m') echo 'selected';?> >месяцы</option>
+           <option value="y" <?if($usloviya['srok_type']=='y') echo 'selected';?> >годы</option>
+         </select>
+       </td>
+       <th>приоритет:</th>
+       <td><input name="usloviya[{$ind}][priority]" type="text" value="<? echo $ind;?>" size="10" /></td>
+     </tr>
+   </table>
+   <? endfor; ?>
+   (<a href="#" onclick="return false;" style="font-weight:normal; color:#0099CC;">Добавить условие</a>)        </td>
+ </tr>
+ <tr>
+   <th>Дополнительная информация <br />
+     по вкладу</th>
+   <td colspan="2"><textarea name="vklad[vklad_info]" rows="3" style="width:100%"><? echo ($vklad['vklad_info']);?></textarea></td>
+ </tr>
+ <tr>
+   <th>Информация по выплате процентов</th>
+   <td colspan="2"><textarea name="vklad[vklad_info_dohod]" rows="3" style="width:100%"><? echo ($vklad['vklad_info_dohod']);?></textarea></td>
+ </tr>
+ <tr>
+   <th>Дополнительная информация<br /> 
+     по процентам</th>
+   <td colspan="2"><textarea name="vklad[vklad_info_procent]" rows="8" style="width:100%"><? echo ($vklad['vklad_info_procent']);?></textarea></td>
+ </tr>
+  <tr>
+   <th>Дополнительные параметры</th>
+   <td colspan="2">
+    <? $options = explode(",", $vklad['vklad_options']); foreach($options as $k=>$v) { if($v == "") unset($options[$k]); } ?>
+    <? foreach(astro::getDepositOptions() as $key=>$value): ?>
+      <label><input type="checkbox" name="vklad[vklad_options][{$key}]" <? if( in_array($key, $options) ): ?>checked<?endif;?>/>{$value}</label><br />
+    <? endforeach; ?>
+   </td>
+ </tr>
+ <tr>
+   <td colspan="3"><p>&nbsp;</p></td>
+ </tr>
+ <tr>
+   <td colspan="3">
+   <input type="hidden" value="<?=$vklad['vklad_id'] ?>" name="id" />
+   <a href="#" class="A_button" onclick="save('#edit_vklad', '<?=$vklad['vklad_id']?>'); return false;" style="float:left; margin-right:20px;">Сохранить</a><a href="#" class="A_button" onclick="cancel();  return false;">Отмена</a></td>
+ </tr>
+</table>
+</form>
+
+</tpl filial_edit_vklad>
